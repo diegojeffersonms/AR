@@ -29,23 +29,28 @@ class SarsaControl(ControlAgent[StateT, ActionT]):
     def select_action(self, state: StateT) -> ActionT:
         """Choose an epsilon-greedy action and cache it for the SARSA bootstrap.
 
-        TODO:
         1. With probability `self.epsilon`, choose a random action from `self.actions`.
         2. Otherwise choose an action with the highest current action-value.
         3. Store the chosen action in `self._selected_actions[state]` and return it.
         """
-        raise NotImplementedError("TODO: implement epsilon-greedy action selection for Sarsa.")
+        if self.rng.random() < self.epsilon:
+            action = self.rng.choice(self.actions)
+        else:
+            action = self.greedy_action(state)
+        self._selected_actions[state] = action
+        return action
 
     def update_transition(self, transition: Transition[StateT, ActionT]) -> None:
         """Apply the SARSA update using the cached next action for the next state.
 
-        TODO:
         1. Use a bootstrap value of `0.0` on terminal transitions.
         2. Otherwise read the cached next action from `self._selected_actions[transition.next_state]`.
         3. Compute the SARSA target `reward + gamma * Q(next_state, next_action)`.
         4. Apply the incremental update with `self.alpha`.
         """
-        raise NotImplementedError("TODO: implement the SARSA update.")
+        bootstrap_value = 0.0 if transition.done else self.action_value_of(transition.next_state, self._selected_actions[transition.next_state])
+        target = transition.reward + self.gamma * bootstrap_value
+        self.Q[(transition.state, transition.action)] += self.alpha * (target - self.Q[(transition.state, transition.action)])
 
     def action_value_of(self, state: StateT, action: ActionT) -> float:
         return float(self.Q[(state, action)])
