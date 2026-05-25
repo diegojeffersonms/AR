@@ -37,6 +37,7 @@ Dependências principais deste repositório:
 - `numpy`
 - `matplotlib`
 - `ipykernel`
+- `torch`
 
 ## Como usar
 
@@ -82,8 +83,23 @@ uv sync
 ar/
 ├─ pyproject.toml
 ├─ README.md
-└─ aula-24-fev/
+├─ aulas/
+│  ├─ aula_2026-02-10/
+│  ├─ aula_2026-02-24/
+│  ├─ aula_2026-03-03/
+│  ├─ aula_2026-03-10/
+│  ├─ aula_2026-03-17/
+│  ├─ aula_2026-03-24/
+│  ├─ aula_2026-04-07/
+│  ├─ aula_2026-04-14/
+│  ├─ aula_2026-04-21/
+│  └─ aula_2026-05-05/
+└─ portefolio/
+   ├─ README.md
+   └─ mia_rl/
 ```
+
+Ver [portefolio/README.md](portefolio/README.md) para a descrição detalhada do pacote `mia_rl`.
 
 ## Troubleshooting rápido
 
