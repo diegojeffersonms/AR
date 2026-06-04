@@ -3,20 +3,20 @@ from __future__ import annotations
 import random
 from typing import Callable
 
-from mia_rl.envs.tictactoe import TicTacToeAction, TicTacToeEnv, TicTacToeState
+from mia_rl.envs.tictactoe import TicTacToeAction, TicTacToeEnv
 
 # Policy type: a callable that takes (env, state) and returns an action.
-Policy = Callable[[TicTacToeEnv, TicTacToeState], TicTacToeAction]
+Policy = Callable[[TicTacToeEnv], TicTacToeAction]
 
 
-def random_action(env: TicTacToeEnv, state: TicTacToeState) -> TicTacToeAction:
+def random_action(env: TicTacToeEnv) -> TicTacToeAction:
     """Choose a uniformly random legal action. Used as a baseline opponent."""
-    return random.choice(env.available_actions(state))
+    return random.choice(env.available_actions())
 
 
-def human_policy(env: TicTacToeEnv, state: TicTacToeState) -> TicTacToeAction:
+def human_policy(env: TicTacToeEnv) -> TicTacToeAction:
     """Ask to pick a valid cell via stdin (1-based, matching the rendered board)."""
-    available_0 = env.available_actions(state)
+    available_0 = env.available_actions()
     available_1 = [a + 1 for a in available_0]  # display as 1–9
     while True:
         try:

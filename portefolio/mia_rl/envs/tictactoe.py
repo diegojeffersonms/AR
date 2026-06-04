@@ -17,17 +17,6 @@ _WIN_LINES: tuple[tuple[int, int, int], ...] = (
 )
 
 
-def _winner(board: TicTacToeState) -> int:
-    """Return 1 if X wins, -1 if O wins, 0 otherwise."""
-    for i, j, k in _WIN_LINES:
-        s = board[i] + board[j] + board[k]
-        if s == 3:
-            return 1
-        if s == -3:
-            return -1
-    return 0
-
-
 class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
     """Two-player Tic-Tac-Toe environment.
 
@@ -50,11 +39,14 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
     calling `step()` for player X and player O.
     """
 
-    def __init__(self) -> None:
-        self.board: TicTacToeState = (0,) * 9
-        self.current_player: int = 1  # X starts
+    @classmethod
+    def start(cls) -> "TicTacToeEnv":
+        """Return the initial empty board state."""
+        cls.board: TicTacToeState = (0,) * 9
+        cls.current_player: int = 1
+        return cls
 
-    def reset(self) -> TicTacToeState:
+    def reset(self) -> None:
         """Reset the board to an empty state and set X as the first player.
 
         1. Set `self.board` to a tuple of nine zeros.
@@ -63,22 +55,53 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
         """
         self.board = (0,) * 9
         self.current_player = 1
-        return self.board
 
-    def available_actions(self, state: TicTacToeState) -> list[TicTacToeAction]:
-        """Return the indices of all empty cells in `state`.
+    @staticmethod
+    def winner_from_state(state: TicTacToeState) -> int:
+        """Return 1 if X wins, -1 if O wins, 0 otherwise."""
+        for i, j, k in _WIN_LINES:
+            s = state[i] + state[j] + state[k]
+            if s == 3:
+                return 1
+            if s == -3:
+                return -1
+        return 0
+
+    @staticmethod
+    def available_actions_from_state(state: TicTacToeState) -> list[TicTacToeAction]:
+        """Return the indices of all empty cells in the given board state.
 
         1. Return a list of all cell indices i where state[i] == 0.
         """
         return [i for i, cell in enumerate(state) if cell == 0]
 
-    def is_terminal(self, state: TicTacToeState) -> bool:
+    @staticmethod
+    def is_terminal_from_state(state: TicTacToeState) -> bool:
         """Return True if the game is over (win or draw).
 
-        1. Use `_winner(state)` to check if any player has won.
+        1. Use `TicTacToeEnv.winner_from_state(state)` to check if any player has won.
         2. Also return True if there are no empty cells left (draw).
         """
-        return _winner(state) != 0 or all(cell != 0 for cell in state)
+        return TicTacToeEnv.winner_from_state(state) != 0 or all(cell != 0 for cell in state)
+
+    def winner(self) -> int:
+        """Return 1 if X wins, -1 if O wins, 0 otherwise."""
+        return self.winner_from_state(self.board)
+
+    def available_actions(self) -> list[TicTacToeAction]:
+        """Return the indices of all empty cells in the current board.
+
+        1. Return a list of all cell indices i where state[i] == 0.
+        """
+        return self.available_actions_from_state(self.board)
+
+    def is_terminal(self) -> bool:
+        """Return True if the game is over (win or draw).
+    
+        1. Use `self.winner()` to check if any player has won.
+        2. Also return True if there are no empty cells left (draw).
+        """
+        return self.is_terminal_from_state(self.board)
 
     def step(self, action: TicTacToeAction) -> tuple[TicTacToeState, float, bool]:
         """Place the current player's mark on cell `action` and advance the game.
@@ -87,7 +110,7 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
            Raise `ValueError` if not.
         2. Build the new board by placing `self.current_player` at `action`.
            Hint: boards are tuples — use tuple slicing or `list` conversion.
-        3. Check for a winner using `_winner`.
+        3. Check for a winner using `self.winner()`.
         4. Determine whether the episode is done:
            - done = True if there is a winner OR no empty cells remain.
         5. Compute the reward for the player who just moved:
@@ -96,17 +119,17 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
         7. Update `self.board` to the new board.
         8. Return `(new_board, reward, done)`.
         """
-        if action not in self.available_actions(self.board):
+        if action not in self.available_actions():
             raise ValueError(f"Invalid action {action}: cell is not empty.")
-        
-        new_board = list(self.board)
+
+        curr_board = list(self.board)
+        new_board = curr_board.copy()
         new_board[action] = self.current_player
         new_board = tuple(new_board)
-        winner = _winner(new_board)
-        done = winner != 0 or all(cell != 0 for cell in new_board)
-        reward = 1.0 if winner == self.current_player else 0.0
-        self.current_player *= -1  # switch player
         self.board = new_board
+        done = self.is_terminal()
+        reward = 1.0 if self.winner() == self.current_player else 0.0
+        self.current_player *= -1
         return new_board, reward, done
 
     def render(self, state: TicTacToeState | None = None) -> None:

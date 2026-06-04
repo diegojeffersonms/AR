@@ -5,7 +5,7 @@ import random
 import numpy as np
 
 from mia_rl.agents.control.reinforce import ReinforceAgent
-from mia_rl.envs.tictactoe import TicTacToeAction, TicTacToeEnv, TicTacToeState, _winner
+from mia_rl.envs.tictactoe import TicTacToeAction, TicTacToeEnv, TicTacToeState
 from mia_rl.features.tictactoe import encode_state
 from mia_rl.policies.tictactoe import Policy, random_action
 
@@ -16,9 +16,9 @@ from mia_rl.policies.tictactoe import Policy, random_action
 def make_reinforce_policy(agent: ReinforceAgent, greedy: bool = True) -> Policy:
     """Wrap a trained ReinforceAgent as a ``Policy`` callable for ``play_game``."""
 
-    def policy(env: TicTacToeEnv, state: TicTacToeState) -> TicTacToeAction:
-        phi = encode_state(state, env.current_player)
-        available = env.available_actions(state)
+    def policy(env: TicTacToeEnv) -> TicTacToeAction:
+        phi = encode_state(env.board, env.current_player)
+        available = env.available_actions()
         if greedy:
             return agent.greedy_action(phi, available)
         return agent.select_action(phi, available)
@@ -58,17 +58,17 @@ def run_reinforce_episode(
     # Hint: each trajectory element is a tuple (phi, action, available, reward).
     #   Tuples are immutable — build a new tuple to replace the last element.
     """
-    state = env.reset()
+    env.reset()
 
     traj_x: list[tuple[np.ndarray, int, list[int], float]] = []
     traj_o: list[tuple[np.ndarray, int, list[int], float]] = []
 
-    while not env.is_terminal(state):
+    while not env.is_terminal():
         player = env.current_player
-        phi = encode_state(state, player)
-        available = env.available_actions(state)
+        phi = encode_state(env.board, player)
+        available = env.available_actions()
         action = agent.select_action(phi, available)
-        next_state, reward, done = env.step(action)
+        _, reward, done = env.step(action)
 
         step = (phi, action, available, reward)
         if player == 1:
@@ -88,11 +88,9 @@ def run_reinforce_episode(
                     -1.0,
                 )  # overwrite r=0 → r=-1
 
-        state = next_state
-
     loss_x = agent.update_episode(traj_x)
     loss_o = agent.update_episode(traj_o)
-    return (loss_x + loss_o) / 2.0, _winner(state)
+    return (loss_x + loss_o) / 2.0, env.winner()
 
 
 # ── vs-random episode ─────────────────────────────────────────────────────────
@@ -109,31 +107,29 @@ def run_vs_random_episode(
     Returns:
         (loss, winner)
     """
-    state = env.reset()
+    env.reset()
     agent_player = random.choice([1, -1])
     traj: list[tuple[np.ndarray, int, list[int], float]] = []
 
-    while not env.is_terminal(state):
+    while not env.is_terminal():
         player = env.current_player
-        available = env.available_actions(state)
+        available = env.available_actions()
 
         if player == agent_player:
-            phi = encode_state(state, player)
+            phi = encode_state(env.board, player)
             action = agent.select_action(phi, available)
-            next_state, reward, done = env.step(action)
+            _, reward, done = env.step(action)
             traj.append((phi, action, available, reward))
         else:
-            action = random_action(env, state)
-            next_state, reward, done = env.step(action)
+            action = random_action(env)
+            _, reward, done = env.step(action)
             if done and reward == 1.0:
                 # random player won → inject -1 into agent's last step
                 if traj:
                     last = traj[-1]
                     traj[-1] = (last[0], last[1], last[2], -1.0)
 
-        state = next_state
-
-    return agent.update_episode(traj), _winner(state)
+    return agent.update_episode(traj), env.winner()
 
 
 # ── Evaluation ────────────────────────────────────────────────────────────────
@@ -175,12 +171,12 @@ def _play_silent(
     policy_o: Policy,
 ) -> int:
     """Play one silent game (no rendering). Returns 1/−1/0."""
-    state = env.reset()
-    while not env.is_terminal(state):
+    env.reset()
+    while not env.is_terminal():
         policy = policy_x if env.current_player == 1 else policy_o
-        action = policy(env, state)
-        state, _, _ = env.step(action)
-    return _winner(state)
+        action = policy(env)
+        env.step(action)
+    return env.winner()
 
 
 # ── Main training loop ────────────────────────────────────────────────────────

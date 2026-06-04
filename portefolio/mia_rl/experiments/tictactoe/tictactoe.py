@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from mia_rl.envs.tictactoe import TicTacToeAction, TicTacToeEnv, TicTacToeState, _winner
+from mia_rl.envs import TicTacToeEnv
 from mia_rl.policies.tictactoe import Policy, human_policy
 
 
@@ -14,33 +14,33 @@ def play_game(
 
     Args:
         env: the TicTacToeEnv instance.
-        policy_x: callable (env, state) -> action for player X (+1).
-        policy_o: callable (env, state) -> action for player O (-1).
+        policy_x: callable (env) -> action for player X (+1).
+        policy_o: callable (env) -> action for player O (-1).
         render: if True, print the board after every move.
 
     Returns:
         1 if X wins, -1 if O wins, 0 for a draw.
     """
-    state = env.reset()
+    env.reset()
     if render:
         print("Initial board:")
-        env.render(state)
+        env.render()
         print()
 
-    while not env.is_terminal(state):
+    while not env.is_terminal():
         player_label = "X" if env.current_player == 1 else "O"
 
         policy = policy_x if env.current_player == 1 else policy_o
-        action = policy(env, state)
+        action = policy(env)
 
-        state, reward, done = env.step(action)
+        _, _, _ = env.step(action)
 
         if render:
             print(f"Player {player_label} plays cell {action + 1}:")
-            env.render(state)
+            env.render()
             print()
 
-    result = _winner(state)
+    result = env.winner()
     if render:
         if result == 1:
             print("X wins!")
@@ -48,6 +48,7 @@ def play_game(
             print("O wins!")
         else:
             print("Draw!")
+
     return result
 
 
@@ -60,7 +61,7 @@ def play_game_vs_human(
 
     Args:
         env: the TicTacToeEnv instance.
-        agent_policy: callable (env, state) -> action for the agent.
+        agent_policy: callable (env) -> action for the agent.
         human_plays: which player the human controls: 1 for X, -1 for O (default).
 
     Returns:

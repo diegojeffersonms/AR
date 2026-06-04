@@ -176,8 +176,8 @@ def main() -> None:
     from mia_rl.agents.control.linear_sarsa import LinearSarsaControl
     from mia_rl.agents.control.torch_sarsa import TorchSarsaControl
     from mia_rl.envs.windy_gridworld import ACTIONS, WindyGridworldEnv
-    from mia_rl.experiments.control import greedy_path, greedy_policy_from_agent, train_control_agent
-    from mia_rl.experiments.fa_training import train_fa_agent
+    from mia_rl.experiments.gridworld.control import greedy_path, greedy_policy_from_agent, train_control_agent
+    from mia_rl.experiments.gridworld.fa_training import train_fa_agent
     from mia_rl.features.windy_gridworld import STATE_ACTION_FEATURE_DIM, state_action_features
 
     env = WindyGridworldEnv()

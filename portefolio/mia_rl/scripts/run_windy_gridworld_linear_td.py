@@ -50,8 +50,8 @@ def main() -> None:
     from mia_rl.agents.control import SarsaControl
     from mia_rl.agents.prediction.linear_td import LinearTD0
     from mia_rl.envs.windy_gridworld import ACTIONS, WindyGridworldEnv
-    from mia_rl.experiments.control import train_control_agent
-    from mia_rl.experiments.fa_training import train_linear_td_agent
+    from mia_rl.experiments.gridworld.control import train_control_agent
+    from mia_rl.experiments.gridworld.fa_training import train_linear_td_agent
     from mia_rl.features.windy_gridworld import TILE_STATE_DIM, tile_features
     from mia_rl.plots.windy_gridworld import plot_td_errors, plot_value_heatmap
 

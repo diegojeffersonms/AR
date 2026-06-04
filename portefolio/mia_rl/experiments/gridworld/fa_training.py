@@ -6,7 +6,7 @@ import numpy as np
 
 from mia_rl.core.base import Transition
 from mia_rl.envs.windy_gridworld import WindyGridworldAction, WindyGridworldEnv, WindyGridworldState
-from mia_rl.experiments.control import run_control_episode
+from mia_rl.experiments.gridworld.control import run_control_episode
 
 
 def train_fa_agent(

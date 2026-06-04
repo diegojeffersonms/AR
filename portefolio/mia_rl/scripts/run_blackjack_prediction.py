@@ -31,9 +31,9 @@ def main() -> None:
 
     import matplotlib.pyplot as plt
 
-    from mia_rl.agents.prediction import FirstVisitMonteCarloPrediction, TD0Prediction
+    from mia_rl.agents.prediction import FirstVisitMonteCarloPrediction, TD0Prediction, TDNPrediction
     from mia_rl.envs.blackjack import BlackjackEnv
-    from mia_rl.experiments.training import generate_episode, train_prediction_agent
+    from mia_rl.experiments.blackjack.training import generate_episode, train_prediction_agent
     from mia_rl.plots.blackjack import plot_value_difference, plot_value_function
     from mia_rl.policies.blackjack import ThresholdPolicy
 
@@ -51,6 +51,7 @@ def main() -> None:
         td_env = BlackjackEnv(seed=args.seed)
         mc_agent = FirstVisitMonteCarloPrediction(gamma=1.0)
         td_agent = TD0Prediction(alpha=args.td_alpha, gamma=1.0)
+        tdn_agent = TDNPrediction(alpha=args.td_alpha, gamma=1.0, n=4)
 
         checkpoints = sorted({cp for cp in (1000, 5000, args.episodes) if cp <= args.episodes})
 
@@ -59,17 +60,23 @@ def main() -> None:
 
         print(f"Training TD(0) for {args.episodes} episodes...")
         td_history = train_prediction_agent(td_env, policy, td_agent, args.episodes, checkpoints=checkpoints)
+
+        print(f"Training TD(n) for {args.episodes} episodes...")
+        tdn_history = train_prediction_agent(td_env, policy, tdn_agent, args.episodes, checkpoints=checkpoints)
         final_mc = mc_history[args.episodes]
         final_td = td_history[args.episodes]
+        final_tdn = tdn_history[args.episodes]
 
         fig_mc, _ = plot_value_function(final_mc, title=f"First-Visit MC after {args.episodes} episodes", vmin=-1.0, vmax=1.0)
         fig_td, _ = plot_value_function(final_td, title=f"TD(0) after {args.episodes} episodes", vmin=-1.0, vmax=1.0)
+        fig_tdn, _ = plot_value_function(final_tdn, title=f"TD(n) after {args.episodes} episodes", vmin=-1.0, vmax=1.0)
         fig_diff, _ = plot_value_difference(final_td, final_mc, title="TD(0) - First-Visit MC", vmin=-1.0, vmax=1.0)
 
         output_dir = PACKAGE_ROOT / args.output_dir
         output_dir.mkdir(parents=True, exist_ok=True)
         fig_mc.savefig(output_dir / "blackjack_mc.png", dpi=150, bbox_inches="tight")
         fig_td.savefig(output_dir / "blackjack_td0.png", dpi=150, bbox_inches="tight")
+        fig_tdn.savefig(output_dir / "blackjack_tdn.png", dpi=150, bbox_inches="tight")
         fig_diff.savefig(output_dir / "blackjack_td_minus_mc.png", dpi=150, bbox_inches="tight")
         print(f"Saved plots to {output_dir}")
 

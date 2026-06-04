@@ -69,14 +69,18 @@ class EpsilonGreedy(BanditAgent):
         self.Q[:] = self.optimistic
 
     def select_action(self):
-        # complete here
-        return None
-        
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(self.k)
+        return np.argmax(self.Q)
+
     def update(self, action, reward):
         self.t += 1
         self.N[action] += 1
+        if self.alpha is None:
+            self.Q[action] += (reward - self.Q[action]) / self.N[action]
+        else:
+            self.Q[action] += self.alpha * (reward - self.Q[action])
 
-        # complete here
 
 # ============================================================
 # UCB agent
@@ -95,7 +99,9 @@ class UCB(BanditAgent):
             if self.N[a] == 0:
                 return a
 
-        # complete here
+        # select action using UCB
+        ucb_values = self.Q + self.c * np.sqrt(np.log(self.t) / self.N)
+        return np.argmax(ucb_values)
 
     def update(self, action, reward):
         self.N[action] += 1
@@ -124,23 +130,23 @@ class GradientBandit(BanditAgent):
 
     def select_action(self):
         probs = self._policy()
-        ## complete
+        return np.random.choice(self.k, p=probs)
 
     def update(self, action, reward):
         self.t += 1
         probs = self._policy()
 
         if self.baseline:
-            self.avg_reward += 0 ## complete
+            self.avg_reward += (reward - self.avg_reward) / self.t
             baseline = self.avg_reward
         else:
             baseline = 0
 
         for a in range(self.k):
             if a == action:
-                self.H[a] += 0 ## complete
+                self.H[a] += self.alpha * (reward - baseline) * (1 - probs[a])
             else:
-                self.H[a] -= 0 ## complete
+                self.H[a] -= self.alpha * (reward - baseline) * probs[a]
 
 
 # ============================================================
@@ -238,5 +244,5 @@ def plot_gradient_bandit():
 
 if __name__ == "__main__":
     plot_epsilon_greedy()
-    #plot_optimistic_vs_ucb()
-    #plot_gradient_bandit()
+    plot_optimistic_vs_ucb()
+    plot_gradient_bandit()

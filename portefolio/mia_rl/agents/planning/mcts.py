@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import random
 
-from mia_rl.envs.tictactoe import TicTacToeAction, TicTacToeState, _winner
+from mia_rl.envs.tictactoe import TicTacToeEnv, TicTacToeAction, TicTacToeState
 
 
 # ── Pure-function helpers (no env mutation) ───────────────────────────────────
@@ -14,14 +14,6 @@ def _apply(state: TicTacToeState, action: int, player: int) -> TicTacToeState:
     board = list(state)
     board[action] = player
     return tuple(board)
-
-
-def _available(state: TicTacToeState) -> list[int]:
-    return [i for i, c in enumerate(state) if c == 0]
-
-
-def _is_terminal(state: TicTacToeState) -> bool:
-    return _winner(state) != 0 or 0 not in state
 
 
 # ── MCTS Node ─────────────────────────────────────────────────────────────────
@@ -65,11 +57,11 @@ class MCTSNode:
         self.children: dict[int, MCTSNode] = {}
         self.visit_count: int = 0
         self.value_sum: float = 0.0  # cumulative outcome from self.player's perspective
-        self.untried_actions: list[int] = _available(state)  # actions not yet expanded
+        self.untried_actions: list[int] = TicTacToeEnv.available_actions_from_state(state)  # actions not yet expanded
 
     @property
     def is_terminal(self) -> bool:
-        return _is_terminal(self.state)
+        return TicTacToeEnv.is_terminal_from_state(self.state)
 
     @property
     def is_fully_expanded(self) -> bool:
@@ -238,11 +230,11 @@ class MCTSAgent:
         # not against ``current`` (which may have changed during the loop).
         """
         current = player
-        while not _is_terminal(state):
-            action = random.choice(_available(state))
+        while not TicTacToeEnv.is_terminal_from_state(state):
+            action = random.choice(TicTacToeEnv.available_actions_from_state(state))
             state = _apply(state, action, current)
             current = -current  # switch player
-        winner = _winner(state)
+        winner = TicTacToeEnv.winner_from_state(state)
         if winner == player:
             return 1.0
         elif winner == 0:
